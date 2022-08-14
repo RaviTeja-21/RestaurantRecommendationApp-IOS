@@ -7,6 +7,9 @@ import UIKit
 @_exported import Firebase
 @_exported import FirebaseFirestore
 @_exported import FirebaseCore
+@_exported import GoogleMaps
+@_exported import GooglePlaces
+@_exported import SwiftyJSON
 
 
 @main
@@ -30,6 +33,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         db = Firestore.firestore()
         let settings = db.settings
         db.settings = settings
+        
+        //
+        //
+    }
+    
+    override init() {
+        super.init()
+        GMSServices.provideAPIKey(APIKEYID)
+        GMSPlacesClient.provideAPIKey(APIKEYID)
+        UIApplication.shared.applicationIconBadgeNumber = 0
     }
     
     func openLink(){
