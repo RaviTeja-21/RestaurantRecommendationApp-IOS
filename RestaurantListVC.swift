@@ -7,12 +7,18 @@ import UIKit
 
 class RestaurantListVC: UIViewController, UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        self.arrayRes.count
+        self.arrayData.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell  = tableView.dequeueReusableCell(withIdentifier: "RestaurantCell", for: indexPath) as! RestaurantCell
-        cell.configCell(data: self.arrayRes[indexPath.row])
+        
+        cell.lblTitle.text = self.arrayData[indexPath.row]["name"].stringValue
+        cell.lblAddress.text = self.arrayData[indexPath.row]["vicinity"].stringValue
+        GFunction.shared.getImageURL(photoRef: self.arrayData[indexPath.row]["photos"][0]["photo_reference"].stringValue,image: cell.imgLogo)
+        
+        
+        
         let tap = UITapGestureRecognizer()
         tap.addAction {
             if let vc = UIStoryboard.main.instantiateViewController(withClass: RestaurantDetailsVC.self){
@@ -34,6 +40,7 @@ class RestaurantListVC: UIViewController, UITableViewDelegate, UITableViewDataSo
     
     var data: CuisineModel!
     var arrayRes = [CuisineModel]()
+    var arrayData = [JSON]()
     
     
     override func viewDidLoad() {
@@ -41,14 +48,12 @@ class RestaurantListVC: UIViewController, UITableViewDelegate, UITableViewDataSo
 
         self.vwTop.layer.cornerRadius = 16.0
         self.vwTop.layer.maskedCorners = CACornerMask(rawValue: 12)
-        self.vwBottom.layer.cornerRadius = 16.0
-        self.vwBottom.layer.maskedCorners = CACornerMask(rawValue: 3)
-        
-        self.btnBooking.layer.cornerRadius = 10.0
+       
+
         self.tblList.delegate = self
         self.tblList.dataSource = self
         
-        self.getRestaurantData()
+//        self.getRestaurantData()
     }
     
     override func viewWillAppear(_ animated: Bool) {

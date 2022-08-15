@@ -29,6 +29,7 @@ class SignUpVC: UIViewController {
     var isSelect : Bool = true
     var flag: Bool = true
     var completionHandlerSend : ((_ data : Bool) -> Void)? = nil
+    private let socialLoginManager: SocialLoginManager = SocialLoginManager()
     
     
     @IBAction func btnClick(_ sender: UIButton) {
@@ -43,7 +44,12 @@ class SignUpVC: UIViewController {
             if sender.isSelected {
                 let error = self.loginValidation(email: self.txtEmail.text?.trim() ?? "", password: self.txtPassword.text?.trim() ?? "")
                 if error == "" {
-                    self.firebaseLogin(data: self.txtEmail.text?.trim() ?? "", password: self.txtPassword.text?.trim() ?? "")
+                    if self.txtEmail.text?.trim() == "Admin@gmail.com" && self.txtPassword.text?.trim() == "Admin@123" {
+                        UIApplication.shared.setAdmin()
+                    }else{
+                        self.firebaseLogin(data: self.txtEmail.text?.trim() ?? "", password: self.txtPassword.text?.trim() ?? "")
+                    }
+                    
                 } else {
                     Alert.shared.showAlert(message: error, completion: nil)
                 }
@@ -61,7 +67,8 @@ class SignUpVC: UIViewController {
         }else if sender == btnForgotPassword {
             self.completionHandlerSend?(true)
             self.dismiss(animated: false, completion: nil)
-          
+        }else if sender == btnApple {
+            self.socialLoginManager.performAppleLogin()
         }
     }
     
@@ -123,6 +130,7 @@ class SignUpVC: UIViewController {
             self.vwName.isHidden = data
             self.vwAddress.isHidden = data
             self.vwConfirmPassword.isHidden = data
+            self.btnForgotPassword.isHidden = !data
         }
     }
     
@@ -145,6 +153,10 @@ class SignUpVC: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         self.setUpStyle()
+        
+        self.txtEmail.text = "ios.test394@gmail.com"
+        self.txtPassword.text = "Test@1234"
+        self.socialLoginManager.delegate = self
         // Do any additional setup after loading the view.
     }
 }
@@ -172,27 +184,25 @@ extension SignUpVC {
             if error != nil {
                 Alert.shared.showAlert(message: error?.localizedDescription ?? "", completion: nil)
             }else{
-                self?.createAccount(name: name, email: data, address: address, password: password)
+                let uid = FirebaseAuth.Auth.auth().currentUser?.uid
+                self?.createAccount(name: name, email: data, address: address, password: password, uid: uid!)
             }
         }
     }
     
-    func createAccount(name: String, email: String, address: String, password: String) {
-        var ref : DocumentReference? = nil
-        ref = AppDelegate.shared.db.collection(fUser).addDocument(data:
-            [
-              fEmail: email,
-              fName: name,
-              fAddress: address,
-              fPassword : password,
-            ])
-        {  err in
+    func createAccount(name: String, email: String, address: String, password: String, uid: String) {
+        AppDelegate.shared.db.collection(fUser).document(uid).setData([fEmail: email,
+                                                                        fName: name,
+                                                                     fAddress: address,
+                                                                       fImage: "",
+                                                                       "id": uid,
+                                                                   fPassword : password]){  err in
             if let err = err {
                 print("Error adding document: \(err)")
             } else {
-                print("Document added with ID: \(ref!.documentID)")
+               
                 GFunction.shared.firebaseRegister(data: email)
-                GFunction.user = UserModel(docID: ref!.documentID, name: name,address: address, email: email, password: password)
+                GFunction.user = UserModel(docID: uid, name: name,address: address, email: email, password: password)
                 UIApplication.shared.setTab()
             }
         }
@@ -210,12 +220,28 @@ extension SignUpVC {
             if snapshot.documents.count != 0 {
                 let data1 = snapshot.documents[0].data()
                 let docId = snapshot.documents[0].documentID
-                if let name: String = data1[fName] as? String, let email: String = data1[fEmail] as? String, let password: String = data1[fPassword] as? String, let address: String = data1[fAddress] as? String {
-                    GFunction.user = UserModel(docID: docId, name: name,address: address, email: email, password: password)
+                if let name: String = data1[fName] as? String, let email: String = data1[fEmail] as? String {
+                    GFunction.user = UserModel(docID: docId, name: name,address: data1[fAddress] as? String ?? "", email: email, password: data1[fPassword] as? String ?? "")
                 }
                 UIApplication.shared.setTab()
             }
         }
+        
+    }
+}
+
+
+extension SignUpVC: SocialLoginDelegate {
+    
+    func socialLoginData(data: SocialLoginDataModel) {
+        print("Social Id==>", data.socialId ?? "")
+        print("First Name==>", data.firstName ?? "")
+        print("Last Name==>", data.lastName ?? "")
+        print("Email==>", data.email ?? "")
+        print("Login type==>", data.loginType ?? "")
+       
+        
+        self.txtEmail.text = data.email ?? ""
         
     }
 }
