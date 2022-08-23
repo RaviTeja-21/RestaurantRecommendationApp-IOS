@@ -18,6 +18,12 @@ extension UIApplication {
         }
     }
     
+    func setAdmin() {
+        if let homeNavigation = UIStoryboard.main.instantiateViewController(withClass: AdminNav.self) {
+            self.setRootController(for: homeNavigation)
+        }
+    }
+    
 }
 
 extension UIApplication {

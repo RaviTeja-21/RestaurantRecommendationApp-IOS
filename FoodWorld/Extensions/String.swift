@@ -22,13 +22,28 @@ struct STRING {
     static let errorPasswordCount = "Please enter password with atleast 8 characters"
 }
 
-let fUser       = "users"
-let fName       = "name"
+let fUser       = "Users"
+let fName       = "username"
 let fEmail      = "email"
+let fID         = "id"
+let fImage      = "imgurl"
 let fPhone      = "phone"
 let fAddress    = "address"
 let fPassword   = "password"
 let fCuisine    = "cuisines"
 let fCID        = "c_id"
 let fImageURL   = "imageURL"
+let fNamE       = "name"
 let fRestaurant = "restaurant"
+let fIcon       = "icon"
+let fReview     = "Reviews"
+let fuserReview = "userReviews"
+let fRating     = "rating"
+let fRevie      = "review"
+let fUserID     = "userId"
+
+
+
+
+
+let APIKEYID = "AIzaSyDmx0k-Wg0kW1iLyQ1OqouYeJIgPSummRA"
