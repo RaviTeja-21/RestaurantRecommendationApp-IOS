@@ -13,8 +13,11 @@ class AddCuisinesVC: UIViewController, UINavigationControllerDelegate {
     var imgPicker = UIImagePickerController()
     var imgPicker1 = OpalImagePickerController()
     var isImageSelected : Bool = false
+    var isURLChange: Bool = false
     var imageURL = ""
     var img = UIImage()
+    var data: CuisineModel!
+    
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -27,6 +30,15 @@ class AddCuisinesVC: UIViewController, UINavigationControllerDelegate {
         self.imgProfile.isUserInteractionEnabled = true
         self.btnAdd.layer.cornerRadius = 10.0
         // Do any additional setup after loading the view.
+        
+        
+        if data != nil {
+            self.imgProfile.setImgWebUrl(url: data.imageURL, isIndicator: true)
+            self.txtName.text = data.name
+            self.imageURL = data.imageURL
+            self.isImageSelected = true
+            self.btnAdd.setTitle("Update Cuisine", for: .normal)
+        }
     }
     
     func validation(name: String) -> String{
@@ -124,21 +136,30 @@ class AddCuisinesVC: UIViewController, UINavigationControllerDelegate {
 //MARK:- UIImagePickerController Delegate Methods
 extension AddCuisinesVC: UIImagePickerControllerDelegate, OpalImagePickerControllerDelegate {
     func uploadImagePic(img1 :UIImage, name: String){
-        let data = img1.jpegData(compressionQuality: 0.8)! as NSData
-        let imagePath = GFunction.shared.UTCToDate(date: Date())
-        let filePath = "cuisines/\(imagePath)"
-        let metaData = StorageMetadata()
-        metaData.contentType = "image/jpg"
-        
-        let storageRef = Storage.storage().reference(withPath: filePath)
-        storageRef.putData(data as Data, metadata: metaData) { (metaData, error) in
-            if error != nil {
-                return
+        if isURLChange {
+            let data = img1.jpegData(compressionQuality: 0.8)! as NSData
+            let imagePath = GFunction.shared.UTCToDate(date: Date())
+            let filePath = "cuisines/\(imagePath)"
+            let metaData = StorageMetadata()
+            metaData.contentType = "image/jpg"
+            
+            let storageRef = Storage.storage().reference(withPath: filePath)
+            storageRef.putData(data as Data, metadata: metaData) { (metaData, error) in
+                if error != nil {
+                    return
+                }
+                storageRef.downloadURL(completion: { (url: URL?, error: Error?) in
+                    self.imageURL = url?.absoluteString ?? ""
+                    if data != nil {
+                        self.updateData(data: self.data, name: name, imageURL: self.imageURL)
+                    } else {
+                        self.addCuisines(name: name, imageURL: self.imageURL)
+                        
+                    }
+                })
             }
-            storageRef.downloadURL(completion: { (url: URL?, error: Error?) in
-                self.imageURL = url?.absoluteString ?? ""
-                self.addCuisines(name: name, imageURL: self.imageURL)
-            })
+        }else{
+            self.updateData(data: self.data, name: name, imageURL: self.data.imageURL)
         }
     }
     
@@ -149,6 +170,7 @@ extension AddCuisinesVC: UIImagePickerControllerDelegate, OpalImagePickerControl
         if let image = info[.editedImage] as? UIImage {
             self.img = image
             self.isImageSelected = true
+            self.isURLChange = true
             self.imgProfile.image = image
         }
         
@@ -164,6 +186,7 @@ extension AddCuisinesVC: UIImagePickerControllerDelegate, OpalImagePickerControl
                 self.img = image
                 self.imgProfile.image = image
                 self.isImageSelected = true
+                self.isURLChange = true
             }
         }
         dismiss(animated: true, completion: nil)
@@ -188,7 +211,7 @@ extension AddCuisinesVC: UIImagePickerControllerDelegate, OpalImagePickerControl
         var ref : DocumentReference? = nil
         ref = AppDelegate.shared.db.collection(fCuisine).addDocument(data:
                                                                             [
-                                                                                fName: name,
+                                                                                fNamE: name,
                                                                                 fImageURL: imageURL,
                                                                             ])
         {  err in
@@ -197,6 +220,20 @@ extension AddCuisinesVC: UIImagePickerControllerDelegate, OpalImagePickerControl
             } else {
                 print("Document added with ID: \(ref!.documentID)")
                 Alert.shared.showAlert(message: "You have added cuisine successfully", completion: nil)
+                self.navigationController?.popViewController(animated: true)
+            }
+        }
+    }
+    
+    func updateData(data: CuisineModel,name: String, imageURL: String) {
+        let ref = AppDelegate.shared.db.collection(fCuisine).document(data.docID)
+        ref.updateData([
+            fNamE: name,
+            fImageURL: imageURL,
+        ]){  err in
+            if let err = err {
+                print("Error adding document: \(err)")
+            } else {
                 self.navigationController?.popViewController(animated: true)
             }
         }
